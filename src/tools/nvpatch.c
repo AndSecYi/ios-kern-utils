@@ -12,9 +12,8 @@
 #include <string.h>             // memmem, strcmp, strnlen
 
 #include "arch.h"               // ADDR, MACH_*, mach_*
-#include "debug.h"              // DEBUG, slow, verbose
+#include "common.h"             // CMD_ITERATE, DEBUG, kutil_slow, kutil_verbose
 #include "libkern.h"            // KERNEL_BASE_OR_GTFO, kernel_read
-#include "mach-o.h"             // CMD_ITERATE
 
 #define MAX_HEADER_SIZE 0x4000
 
@@ -99,6 +98,8 @@ static void print_usage(const char *self)
                     , self, self);
 }
 
+// TODO: rewrite to bypass gOFVars entirely
+
 int main(int argc, const char **argv)
 {
     const char *target = NULL;
@@ -117,11 +118,11 @@ int main(int argc, const char **argv)
         }
         if(strcmp(argv[aoff], "-d") == 0)
         {
-            slow = true;
+            kutil_slow = true;
         }
         else if(strcmp(argv[aoff], "-v") == 0)
         {
-            verbose = true;
+            kutil_verbose = true;
         }
         else
         {

@@ -12,9 +12,8 @@
 #include <mach/thread_status.h> // arm_unified_thread_state_t
 
 #include "arch.h"               // ADDR
-#include "debug.h"              // slow, verbose
+#include "common.h"             // CMD_ITERATE, kutil_slow, kutil_verbose
 #include "libkern.h"            // KERNEL_BASE_OR_GTFO
-#include "mach-o.h"             // CMD_ITERATE
 
 static void print_usage(const char *self)
 {
@@ -77,11 +76,11 @@ int main(int argc, const char **argv)
         }
         if(strcmp(argv[i], "-d") == 0)
         {
-            slow = true;
+            kutil_slow = true;
         }
         else if(strcmp(argv[i], "-v") == 0)
         {
-            verbose = true;
+            kutil_verbose = true;
         }
         else if(strcmp(argv[i], "-b") == 0)
         {

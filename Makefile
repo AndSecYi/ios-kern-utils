@@ -220,6 +220,7 @@ $(OBJDIR)/%.macos.o: $(SRCDIR)/lib/%.c | $(OBJDIR)
 $(OBJDIR)/%.o: $(addsuffix .o, $(addprefix $(OBJDIR)/%., $(SUFFIXES)))
 	$(LIPO) -create -output $@ $^
 
+# TODO: fix "make clean all"
 $(BINDIR):
 	mkdir -p $(BINDIR)
 

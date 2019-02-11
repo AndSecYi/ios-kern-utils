@@ -20,12 +20,10 @@
 #include <sys/syscall.h>        // syscall
 
 #include "arch.h"               // TARGET_MACOS, IMAGE_OFFSET, MACH_TYPE, MACH_HEADER_MAGIC, mach_hdr_t
-#include "debug.h"              // DEBUG
-#include "mach-o.h"             // CMD_ITERATE
+#include "common.h"             // DEBUG, CMD_ITERATE
+#include "mach.h"               // kutil_task_read, kutil_task_write
 
 #include "libkern.h"
-
-#define MAX_CHUNK_SIZE 0xFFF /* MIG limitation */
 
 #define VERIFY_PORT(port, ret) \
 do \
@@ -945,8 +943,6 @@ vm_size_t kernel_read(vm_address_t addr, vm_size_t size, void *buf)
     DEBUG("Reading kernel bytes " ADDR "-" ADDR, addr, addr + size);
     kern_return_t ret;
     task_t kernel_task;
-    vm_size_t remainder = size,
-              bytes_read = 0;
 
     ret = get_kernel_task(&kernel_task);
     if(ret != KERN_SUCCESS)
@@ -954,32 +950,13 @@ vm_size_t kernel_read(vm_address_t addr, vm_size_t size, void *buf)
         return -1;
     }
 
-    // The vm_* APIs are part of the mach_vm subsystem, which is a MIG thing
-    // and therefore has a hard limit of 0x1000 bytes that it accepts. Due to
-    // this, we have to do both reading and writing in chunks smaller than that.
-    for(vm_address_t end = addr + size; addr < end; remainder -= size)
-    {
-        size = remainder > MAX_CHUNK_SIZE ? MAX_CHUNK_SIZE : remainder;
-        ret = vm_read_overwrite(kernel_task, addr, size, (vm_address_t)&((char*)buf)[bytes_read], &size);
-        if(ret != KERN_SUCCESS || size == 0)
-        {
-            DEBUG("vm_read error: %s", mach_error_string(ret));
-            break;
-        }
-        bytes_read += size;
-        addr += size;
-    }
-
-    return bytes_read;
+    return kutil_task_read(kernel_task, addr, size, buf, /* TODO wire */ 0);
 }
 
 vm_size_t kernel_write(vm_address_t addr, vm_size_t size, void *buf)
 {
-    DEBUG("Writing to kernel at " ADDR "-" ADDR, addr, addr + size);
     kern_return_t ret;
     task_t kernel_task;
-    vm_size_t remainder = size,
-              bytes_written = 0;
 
     ret = get_kernel_task(&kernel_task);
     if(ret != KERN_SUCCESS)
@@ -987,38 +964,5 @@ vm_size_t kernel_write(vm_address_t addr, vm_size_t size, void *buf)
         return -1;
     }
 
-    for(vm_address_t end = addr + size; addr < end; remainder -= size)
-    {
-        size = remainder > MAX_CHUNK_SIZE ? MAX_CHUNK_SIZE : remainder;
-        ret = vm_write(kernel_task, addr, (vm_offset_t)&((char*)buf)[bytes_written], size);
-        if(ret != KERN_SUCCESS)
-        {
-            DEBUG("vm_write error: %s", mach_error_string(ret));
-            break;
-        }
-        bytes_written += size;
-        addr += size;
-    }
-
-    return bytes_written;
-}
-
-vm_address_t kernel_find(vm_address_t addr, vm_size_t len, void *buf, size_t size)
-{
-    vm_address_t ret = 0;
-    unsigned char* b = malloc(len);
-    if(b)
-    {
-        // TODO reading in chunks would probably be better
-        if(kernel_read(addr, len, b))
-        {
-            void *ptr = memmem(b, len, buf, size);
-            if(ptr)
-            {
-                ret = addr + ((char*)ptr - (char*)b);
-            }
-        }
-        free(b);
-    }
-    return ret;
+    return kutil_task_write(kernel_task, addr, size, buf, /* TODO wire */ 0);
 }

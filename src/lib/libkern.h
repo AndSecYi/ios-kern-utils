@@ -5,8 +5,8 @@
  * Copyright (c) 2016-2017 Siguza
  */
 
-#ifndef LIBKERN_H
-#define LIBKERN_H
+#ifndef KUTIL_LIBKERN_H
+#define KUTIL_LIBKERN_H
 
 #include <stdio.h>              // fprintf, stderr
 #include <unistd.h>             // geteuid
@@ -60,7 +60,7 @@ vm_size_t kernel_write(vm_address_t addr, vm_size_t size, void *buf);
  *
  * Returns the address of the first occurance of bytes if found, otherwise 0.
  */
-vm_address_t kernel_find(vm_address_t addr, vm_size_t len, void *buf, size_t size);
+//vm_address_t kernel_find(vm_address_t addr, vm_size_t len, void *buf, size_t size);
 
 /*
  * Test for kernel task access and return -1 on failure.
@@ -68,6 +68,8 @@ vm_address_t kernel_find(vm_address_t addr, vm_size_t len, void *buf, size_t siz
  * To be embedded in a main() function.
  *
  * If parameters are given, the last one will be assigned the kernel task, all others are ignored.
+ *
+ * XXX: The argument hack requires -std=gnu99
  */
 #define KERNEL_TASK_OR_GTFO(args...) \
 do \

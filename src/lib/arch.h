@@ -5,8 +5,8 @@
  * Copyright (c) 2016-2017 Siguza
  */
 
-#ifndef ARCH_H
-#define ARCH_H
+#ifndef KUTIL_ARCH_H
+#define KUTIL_ARCH_H
 
 #include <TargetConditionals.h> // TARGET_OS_IPHONE
 #include <mach-o/loader.h>      // mach_header, mach_header_64, segment_command, segment_command_64

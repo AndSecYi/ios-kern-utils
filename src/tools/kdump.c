@@ -15,9 +15,8 @@
 #include <mach/vm_types.h>      // vm_address_t
 
 #include "arch.h"               // ADDR, mach_*
-#include "debug.h"              // slow, verbose
+#include "common.h"             // CMD_ITERATE, kutil_slow, kutil_verbose
 #include "libkern.h"            // KERNEL_BASE_OR_GTFO, kernel_read
-#include "mach-o.h"             // CMD_ITERATE
 
 #define max(a, b) (a) > (b) ? (a) : (b)
 
@@ -57,11 +56,11 @@ int main(int argc, const char **argv)
         }
         if(strcmp(argv[aoff], "-d") == 0)
         {
-            slow = true;
+            kutil_slow = true;
         }
         else if(strcmp(argv[aoff], "-v") == 0)
         {
-            verbose = true;
+            kutil_verbose = true;
         }
         else
         {

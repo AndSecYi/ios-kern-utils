@@ -19,7 +19,7 @@
 #include <mach/vm_types.h>      // vm_address_t, vm_size_t
 
 #include "arch.h"               // ADDR
-#include "debug.h"              // slow, verbose
+#include "common.h"             // kutil_slow, kutil_verbose
 #include "libkern.h"            // get_kernel_task
 
 #define VM_KERN_MEMORY_NONE                 0
@@ -117,18 +117,6 @@ static const char* inheritance(vm_inherit_t inh)
     return "??";
 }
 
-static void print_usage(const char *self)
-{
-    fprintf(stderr, "Usage: %s [-h] [-v [-d]] [-e]\n"
-                    "    -d  Debug mode (sleep between function calls, gives\n"
-                    "        sshd time to deliver output before kernel panic)\n"
-                    "    -e  Extended output (print all information available)\n"
-                    "    -g  Show gaps between regions\n"
-                    "    -h  Print this help\n"
-                    "    -v  Verbose (debug output)\n"
-                    , self);
-}
-
 static void print_range(task_t kernel_task, bool extended, bool gaps, unsigned int level, vm_address_t min, vm_address_t max)
 {
     vm_region_submap_info_data_64_t info;
@@ -218,10 +206,10 @@ static void print_range(task_t kernel_task, bool extended, bool gaps, unsigned i
                    , curA, curR, curW, curX
                    , maxA, maxR, maxW, maxX
                    , info.is_submap ? "map" : depth > 0 ? "sub" : "mem", share_mode(info.share_mode), inheritance(info.inheritance), info.offset
-                   , info.behavior, info.pages_reusable, info.user_wired_count, info.external_pager, info.shadow_depth // these should all be 0
+                   , info.behavior, info.pages_reusable, info.user_wired_count, info.external_pager, info.shadow_depth // these should all be 0 (for the kernel)
                    , info.user_tag, info.object_id, info.ref_count
                    , info.pages_swapped_out, info.pages_shared_now_private, info.pages_resident, info.pages_dirtied
-                   , kern_tag(info.user_tag)
+                   , kern_tag(info.user_tag) /* TODO: userland tags */
             );
         }
         else
@@ -238,10 +226,24 @@ static void print_range(task_t kernel_task, bool extended, bool gaps, unsigned i
     }
 }
 
+static void print_usage(const char *self)
+{
+    fprintf(stderr, "Usage: %s [options]\n"
+                    "    -d      Debug mode (sleep between function calls, gives\n"
+                    "            sshd time to deliver output before kernel panic)\n"
+                    "    -e      Extended output (print all information available)\n"
+                    "    -g      Show gaps between regions\n"
+                    "    -h      Print this help\n"
+                    "    -p pid  Operate on a process other than the kernel\n"
+                    "    -v      Verbose (debug output)\n"
+                    , self);
+}
+
 int main(int argc, const char **argv)
 {
     bool extended = false,
          gaps     = false;
+    pid_t pid     = 0;
 
     for(int i = 1; i < argc; ++i)
     {
@@ -252,11 +254,11 @@ int main(int argc, const char **argv)
         }
         if(strcmp(argv[i], "-d") == 0)
         {
-            slow = true;
+            kutil_slow = true;
         }
         else if(strcmp(argv[i], "-v") == 0)
         {
-            verbose = true;
+            kutil_verbose = true;
         }
         else if(strcmp(argv[i], "-e") == 0)
         {
@@ -265,6 +267,20 @@ int main(int argc, const char **argv)
         else if(strcmp(argv[i], "-g") == 0)
         {
             gaps = true;
+        }
+        else if(strcmp(argv[i], "-p") == 0)
+        {
+            ++i;
+            if(i >= argc)
+            {
+                fprintf(stderr, "[!] Too few arguments (missing PID)\n");
+                return -1;
+            }
+            /*char *end;
+            errno = 0;
+            pid = (pid_t)strtoull(argv[i], &end, 0);
+            if(argv[i][0] == '\0' || end[0] != '\0' || errno != errno)*/
+            // TODO
         }
         else
         {
